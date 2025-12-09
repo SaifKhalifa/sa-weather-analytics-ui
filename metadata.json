@@ -1,0 +1,5 @@
+{
+  "name": "SA Weather Analytics",
+  "description": "A comprehensive real-time weather analysis dashboard for Saudi Arabia featuring temperature tracking, humidity analysis, and anomaly detection.",
+  "requestFramePermissions": []
+}
