@@ -6,13 +6,13 @@ import LoadingState from '../components/LoadingState';
 import { exportToCSV } from '../services/weatherService';
 
 interface AnomaliesProps {
-  data: Anomaly[];
+  anomalies: Anomaly[];
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
 }
 
-const Anomalies: React.FC<AnomaliesProps> = ({ data, loading, error, onRetry }) => {
+const Anomalies: React.FC<AnomaliesProps> = ({ anomalies, loading, error, onRetry }) => {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'Critical': return 'text-red-500 bg-red-500';

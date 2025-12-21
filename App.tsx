@@ -8,8 +8,21 @@ import Humidity from './pages/Humidity';
 import Anomalies from './pages/Anomalies';
 import CMSFrequency from './pages/CMSFrequency';
 
-import { getOverviewStats, getCityReadings, getHourlyTempData, getHumidityData, getAnomalies, getFrequencyData } from './services/weatherService';
-import { WeatherStat, CityData, ChartDataPoint, Anomaly, FrequencyData } from './types';
+import { 
+  getCities, 
+  getRealTimeLatest,
+  getHourlyChart, 
+  getMonthlyChart,
+  getAnomalies,
+  getWeatherChart 
+} from './services/weatherService';
+import { 
+  CityStatistic,
+  RealTimeStats, 
+  TimeSeriesChartData,
+  Anomaly, 
+  WeatherChartData 
+} from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('overview');
@@ -17,34 +30,34 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState('Never');
   
-  // Data State
-  const [stats, setStats] = useState<WeatherStat[]>([]);
-  const [readings, setReadings] = useState<CityData[]>([]);
-  const [tempData, setTempData] = useState<ChartDataPoint[]>([]);
-  const [humidityData, setHumidityData] = useState<ChartDataPoint[]>([]);
+  // Data State - MongoDB collections
+  const [cityStats, setCityStats] = useState<CityStatistic[]>([]);
+  const [realTimeStats, setRealTimeStats] = useState<RealTimeStats[]>([]);
+  const [hourlyChart, setHourlyChart] = useState<TimeSeriesChartData | null>(null);
+  const [monthlyChart, setMonthlyChart] = useState<TimeSeriesChartData | null>(null);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
-  const [frequencyData, setFrequencyData] = useState<FrequencyData[]>([]);
+  const [weatherChart, setWeatherChart] = useState<WeatherChartData | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const [statsData, readingsData, tempDataRes, humidityDataRes, anomaliesData, frequencyDataRes] = await Promise.all([
-        getOverviewStats(),
-        getCityReadings(),
-        getHourlyTempData(),
-        getHumidityData(),
-        getAnomalies(),
-        getFrequencyData()
+      const [cities, realTime, hourly, monthly, anomaliesData, weather] = await Promise.all([
+        getCities(),
+        getRealTimeLatest(),
+        getHourlyChart(),
+        getMonthlyChart('2017'),
+        getAnomalies({ limit: 50 }),
+        getWeatherChart()
       ]);
       
-      setStats(statsData);
-      setReadings(readingsData);
-      setTempData(tempDataRes);
-      setHumidityData(humidityDataRes);
+      setCityStats(cities);
+      setRealTimeStats(realTime);
+      setHourlyChart(hourly);
+      setMonthlyChart(monthly);
       setAnomalies(anomaliesData);
-      setFrequencyData(frequencyDataRes);
+      setWeatherChart(weather);
       
       setLastUpdated('Just now');
       setError(null);
@@ -72,23 +85,26 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch(currentPage) {
       case 'overview':
-        return <Overview stats={stats} readings={readings} loading={loading} error={error} onRetry={fetchData} />;
+        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} loading={loading} error={error} onRetry={fetchData} />;
       case 'temperature':
-        return <Temperature data={tempData} loading={loading} error={error} onRetry={fetchData} />;
+        return <Temperature hourlyChart={hourlyChart} loading={loading} error={error} onRetry={fetchData} />;
       case 'humidity':
-        return <Humidity data={humidityData} loading={loading} error={error} onRetry={fetchData} />;
+        return <Humidity monthlyChart={monthlyChart} loading={loading} error={error} onRetry={fetchData} />;
       case 'anomalies':
-        return <Anomalies data={anomalies} loading={loading} error={error} onRetry={fetchData} />;
+        return <Anomalies anomalies={anomalies} loading={loading} error={error} onRetry={fetchData} />;
       case 'frequency':
-        return <CMSFrequency data={frequencyData} loading={loading} error={error} onRetry={fetchData} />;
+      case 'cms-frequency':
+        return <CMSFrequency weatherChart={weatherChart} loading={loading} error={error} onRetry={fetchData} />;
       default:
-        return <Overview stats={stats} readings={readings} loading={loading} error={error} onRetry={fetchData} />;
+        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} loading={loading} error={error} onRetry={fetchData} />;
     }
   };
 
   const getPageTitle = () => {
     switch(currentPage) {
-      case 'frequency': return 'Frequency Analysis';
+      case 'frequency': 
+      case 'cms-frequency': 
+        return 'Frequency Analysis';
       case 'anomalies': return 'Anomalies & Alerts';
       default: return currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
     }

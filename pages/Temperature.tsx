@@ -1,17 +1,17 @@
 import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ChartDataPoint } from '../types';
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TimeSeriesChartData } from '../types';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 
 interface TemperatureProps {
-  data: ChartDataPoint[];
+  hourlyChart: TimeSeriesChartData | null;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void;
 }
 
-const Temperature: React.FC<TemperatureProps> = ({ data, loading, error, onRetry }) => {
+const Temperature: React.FC<TemperatureProps> = ({ hourlyChart, loading, error, onRetry }) => {
   if (error) {
     return (
       <div className="p-8">
