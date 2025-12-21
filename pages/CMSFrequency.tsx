@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { FrequencyData } from '../types';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, BarChart2 } from 'lucide-react';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 
@@ -60,6 +60,15 @@ const CMSFrequency: React.FC<CMSFrequencyProps> = ({ data, loading, error, onRet
             </div>
 
             <div className="h-[350px] w-full">
+              {data.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <BarChart2 className="mx-auto text-gray-600 mb-4" size={48} />
+                    <h3 className="text-white text-lg font-semibold mb-2">No Weather Data Available</h3>
+                    <p className="text-gray-400 text-sm">Weather condition frequency data is currently being processed.</p>
+                  </div>
+                </div>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data}>
                    <Tooltip 
@@ -74,6 +83,7 @@ const CMSFrequency: React.FC<CMSFrequencyProps> = ({ data, loading, error, onRet
                    </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              )}
             </div>
          </div>
        </div>

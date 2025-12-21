@@ -1,6 +1,7 @@
 import React from 'react';
-import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TimeSeriesChartData } from '../types';
+import { Thermometer } from 'lucide-react';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 
@@ -48,6 +49,15 @@ const Temperature: React.FC<TemperatureProps> = ({ hourlyChart, loading, error, 
 
       {/* Main Chart */}
       <div className="bg-card-dark border border-gray-800 rounded-xl p-6 h-[400px]">
+        {!hourlyChart || hourlyChart.labels.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Thermometer className="mx-auto text-gray-600 mb-4" size={48} />
+              <h3 className="text-white text-lg font-semibold mb-2">No Temperature Data Available</h3>
+              <p className="text-gray-400 text-sm">Hourly temperature data is currently being processed.</p>
+            </div>
+          </div>
+        ) : (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
@@ -73,6 +83,7 @@ const Temperature: React.FC<TemperatureProps> = ({ hourlyChart, loading, error, 
             <Area type="monotone" dataKey="Dammam" stroke="#f59e0b" strokeWidth={2} fillOpacity={0} />
           </AreaChart>
         </ResponsiveContainer>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

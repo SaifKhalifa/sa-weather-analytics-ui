@@ -89,6 +89,15 @@ const Overview: React.FC<OverviewProps> = ({ cityStats, realTimeStats, loading, 
              <button className="text-primary text-sm font-medium hover:underline">View All</button>
         </div>
         
+        {cityStats.length === 0 ? (
+          <div className="bg-card-dark border border-gray-800 rounded-xl p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <Thermometer className="mx-auto text-gray-600 mb-4" size={48} />
+              <h3 className="text-white text-lg font-semibold mb-2">No City Data Available</h3>
+              <p className="text-gray-400 text-sm">Weather data is currently being processed. Please check back in a few moments.</p>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {cityStats.slice(0, 8).map((city) => (
              <div key={city._id} className="bg-card-dark border border-gray-800 p-5 rounded-xl space-y-3">
@@ -120,6 +129,7 @@ const Overview: React.FC<OverviewProps> = ({ cityStats, realTimeStats, loading, 
              </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Real-Time Stats */}

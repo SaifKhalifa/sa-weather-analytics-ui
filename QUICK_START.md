@@ -43,7 +43,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
 MONGODB_DATABASE=sa-weather-analytics
 PORT=3000
 NODE_ENV=development
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:5173
 ```
 
 ### 1.4 Start backend server
@@ -108,7 +108,7 @@ npm run dev
 ```
 
 ### 2.5 Open in browser
-Visit: `http://localhost:5173`
+Visit: **http://localhost:5173**
 
 ✅ **Frontend is running!**
 

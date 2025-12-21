@@ -1,6 +1,6 @@
 import React from 'react';
 import { Anomaly } from '../types';
-import { Info, MoreHorizontal, Calendar, RefreshCw, Download } from 'lucide-react';
+import { Info, MoreHorizontal, Calendar, RefreshCw, Download, AlertTriangle } from 'lucide-react';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 import { exportToCSV } from '../services/weatherService';
@@ -49,7 +49,7 @@ const Anomalies: React.FC<AnomaliesProps> = ({ anomalies, loading, error, onRetr
         <div className="flex gap-2">
           <button 
             onClick={handleExport}
-            disabled={data.length === 0}
+            disabled={anomalies.length === 0}
             className="flex items-center gap-2 bg-[#2D3748] hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Download size={16} /> Export CSV
@@ -96,7 +96,7 @@ const Anomalies: React.FC<AnomaliesProps> = ({ anomalies, loading, error, onRetr
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700/50">
-            {data.map((item) => {
+            {anomalies.map((item) => {
               const colorClass = getSeverityColor(item.severity);
               return (
                 <tr key={item.id} className="hover:bg-gray-800/30 transition-colors">
@@ -119,9 +119,11 @@ const Anomalies: React.FC<AnomaliesProps> = ({ anomalies, loading, error, onRetr
             })}
           </tbody>
         </table>
-        {data.length === 0 && (
-            <div className="p-12 text-center text-gray-500">
-                No active anomalies detected.
+        {anomalies.length === 0 && (
+            <div className="p-12 text-center">
+              <AlertTriangle className="mx-auto text-gray-600 mb-4" size={48} />
+              <h3 className="text-white text-lg font-semibold mb-2">No Anomalies Detected</h3>
+              <p className="text-gray-400 text-sm">There are currently no weather anomalies in the system.</p>
             </div>
         )}
       </div>
