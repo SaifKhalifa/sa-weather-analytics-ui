@@ -23,6 +23,7 @@ export interface WeatherCondition {
 // MongoDB Collection: hourly_patterns
 export interface HourlyPattern {
   _id: string;
+  city?: string; // Optional - included when querying by city
   hour: number;
   avg_temp: number;
   record_count: number;
@@ -32,6 +33,7 @@ export interface HourlyPattern {
 // MongoDB Collection: monthly_patterns
 export interface MonthlyPattern {
   _id: string;
+  city?: string; // Optional - included when querying by city
   year: string;
   month: number;
   avg_temp: number;
@@ -90,6 +92,21 @@ export interface TimeSeriesChartData {
     label: string;
     data: number[];
   }[];
+}
+
+// MongoDB Collection: global_statistics (NEW - from ENHANCED_ANALYTICS_API.md)
+export interface GlobalStatistics {
+  _id?: string;
+  total_records: number;
+  global_min_temp: number;
+  global_max_temp: number;
+  global_avg_temp: number;
+  avg_humidity: number;
+  avg_wind: number;
+  avg_visibility: number;
+  total_cities: number;
+  total_weather_types: number;
+  updated_at: string;
 }
 
 // UI helper interfaces

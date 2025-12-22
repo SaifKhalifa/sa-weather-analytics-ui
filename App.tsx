@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ErrorBoundary from './components/ErrorBoundary';
 import Overview from './pages/Overview';
+import AllCities from './pages/AllCities';
 import Temperature from './pages/Temperature';
 import Humidity from './pages/Humidity';
 import Anomalies from './pages/Anomalies';
@@ -14,52 +15,73 @@ import {
   getHourlyChart, 
   getMonthlyChart,
   getAnomalies,
-  getWeatherChart 
+  getWeatherChart,
+  getGlobalStatistics,
+  getWeatherFrequencies,
+  getCityFrequencies
 } from './services/weatherService';
 import { 
   CityStatistic,
   RealTimeStats, 
   TimeSeriesChartData,
   Anomaly, 
-  WeatherChartData 
+  WeatherChartData,
+  GlobalStatistics,
+  FrequencyData
 } from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState('Never');
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(30000); // in milliseconds
   
   // Data State - MongoDB collections
   const [cityStats, setCityStats] = useState<CityStatistic[]>([]);
   const [realTimeStats, setRealTimeStats] = useState<RealTimeStats[]>([]);
   const [hourlyChart, setHourlyChart] = useState<TimeSeriesChartData | null>(null);
   const [monthlyChart, setMonthlyChart] = useState<TimeSeriesChartData | null>(null);
+  const [hourlyHumidityChart, setHourlyHumidityChart] = useState<TimeSeriesChartData | null>(null);
+  const [monthlyHumidityChart, setMonthlyHumidityChart] = useState<TimeSeriesChartData | null>(null);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [weatherChart, setWeatherChart] = useState<WeatherChartData | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStatistics | null>(null);
+  const [weatherFrequencies, setWeatherFrequencies] = useState<FrequencyData[]>([]);
+  const [cityFrequencies, setCityFrequencies] = useState<FrequencyData[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const [cities, realTime, hourly, monthly, anomaliesData, weather] = await Promise.all([
+      const [cities, realTime, hourlyTemp, monthlyTemp, hourlyHumid, monthlyHumid, anomaliesData, weather, global, weatherFreqs, cityFreqs] = await Promise.all([
         getCities(),
         getRealTimeLatest(),
-        getHourlyChart(),
-        getMonthlyChart('2017'),
-        getAnomalies({ limit: 50 }),
-        getWeatherChart()
+        getHourlyChart('temp'),
+        getMonthlyChart('2017', 'temp'),
+        getHourlyChart('humidity'),
+        getMonthlyChart('2017', 'humidity'),
+        getAnomalies({ limit: 100 }), // Increased limit for diverse city coverage
+        getWeatherChart(),
+        getGlobalStatistics(),
+        getWeatherFrequencies(10),
+        getCityFrequencies(10)
       ]);
       
       setCityStats(cities);
       setRealTimeStats(realTime);
-      setHourlyChart(hourly);
-      setMonthlyChart(monthly);
+      setHourlyChart(hourlyTemp);
+      setMonthlyChart(monthlyTemp);
+      setHourlyHumidityChart(hourlyHumid);
+      setMonthlyHumidityChart(monthlyHumid);
       setAnomalies(anomaliesData);
       setWeatherChart(weather);
+      setGlobalStats(global);
+      setWeatherFrequencies(weatherFreqs);
+      setCityFrequencies(cityFreqs);
       
-      setLastUpdated('Just now');
+      console.log('City Stats received:', cities);
+      
       setError(null);
     } catch (err: any) {
       console.error('Error fetching data:', err);
@@ -76,32 +98,37 @@ const App: React.FC = () => {
 
   // Auto-refresh
   useEffect(() => {
+    if (!autoRefresh) return;
+    
     const interval = setInterval(() => {
        fetchData();
-    }, 30000); // 30 seconds
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  }, refreshInterval);
+  return () => clearInterval(interval);
+}, [fetchData, autoRefresh, refreshInterval]);
 
   const renderPage = () => {
     switch(currentPage) {
       case 'overview':
-        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} loading={loading} error={error} onRetry={fetchData} />;
+        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} globalStats={globalStats} loading={loading} error={error} onRetry={fetchData} />;
+      case 'all-cities':
+        return <AllCities cityStats={cityStats} loading={loading} error={error} onRetry={fetchData} />;
       case 'temperature':
-        return <Temperature hourlyChart={hourlyChart} loading={loading} error={error} onRetry={fetchData} />;
+        return <Temperature hourlyChart={hourlyChart} monthlyChart={monthlyChart} loading={loading} error={error} onRetry={fetchData} />;
       case 'humidity':
-        return <Humidity monthlyChart={monthlyChart} loading={loading} error={error} onRetry={fetchData} />;
+        return <Humidity hourlyChart={hourlyHumidityChart} monthlyChart={monthlyHumidityChart} loading={loading} error={error} onRetry={fetchData} />;
       case 'anomalies':
         return <Anomalies anomalies={anomalies} loading={loading} error={error} onRetry={fetchData} />;
       case 'frequency':
       case 'cms-frequency':
-        return <CMSFrequency weatherChart={weatherChart} loading={loading} error={error} onRetry={fetchData} />;
+        return <CMSFrequency weatherFrequencies={weatherFrequencies} cityFrequencies={cityFrequencies} loading={loading} error={error} onRetry={fetchData} />;
       default:
-        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} loading={loading} error={error} onRetry={fetchData} />;
+        return <Overview cityStats={cityStats} realTimeStats={realTimeStats} globalStats={globalStats} loading={loading} error={error} onRetry={fetchData} />;
     }
   };
 
   const getPageTitle = () => {
     switch(currentPage) {
+      case 'all-cities': return 'All Cities';
       case 'frequency': 
       case 'cms-frequency': 
         return 'Frequency Analysis';
@@ -120,7 +147,11 @@ const App: React.FC = () => {
             title={getPageTitle()} 
             onRefresh={fetchData} 
             isRefreshing={loading}
-            lastUpdated={lastUpdated}
+            globalStats={globalStats}
+            autoRefresh={autoRefresh}
+            onToggleAutoRefresh={() => setAutoRefresh(!autoRefresh)}
+            refreshInterval={refreshInterval}
+            onChangeInterval={setRefreshInterval}
           />
           
           <main className="flex-1 overflow-y-auto bg-[#101922] scroll-smooth">

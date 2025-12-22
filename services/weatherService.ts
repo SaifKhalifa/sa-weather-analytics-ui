@@ -6,7 +6,9 @@ import {
   MonthlyPattern,
   RealTimeStats,
   WeatherChartData,
-  TimeSeriesChartData
+  TimeSeriesChartData,
+  GlobalStatistics,
+  FrequencyData
 } from '../types';
 
 // API Configuration
@@ -96,6 +98,79 @@ export const getHottestCities = async (limit: number = 5): Promise<CityStatistic
 };
 
 // ===========================
+// GLOBAL STATISTICS APIs (NEW)
+// ===========================
+
+export const getGlobalStatistics = async (): Promise<GlobalStatistics> => {
+  try {
+    return await fetchWithRetry<GlobalStatistics>(`${API_BASE_URL}/stats/global`);
+  } catch (error) {
+    console.error('Error fetching global statistics:', error);
+    throw error;
+  }
+};
+
+// ===========================
+// CMS FREQUENCY APIs (NEW)
+// ===========================
+
+export const getCityFrequencies = async (topN?: number): Promise<FrequencyData[]> => {
+  try {
+    const url = topN 
+      ? `${API_BASE_URL}/frequency/cities/top/${topN}`
+      : `${API_BASE_URL}/frequency/cities`;
+    
+    const response = await fetchWithRetry<any>(url);
+    
+    // Handle both array response and object with items property
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response.items) {
+      return response.items;
+    } else if (response.frequencies) {
+      // Convert frequencies object to array
+      return Object.entries(response.frequencies).map(([item, count]) => ({
+        condition: item,
+        count: count as number
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error fetching city frequencies:', error);
+    throw error;
+  }
+};
+
+export const getWeatherFrequencies = async (topN?: number): Promise<FrequencyData[]> => {
+  try {
+    const url = topN 
+      ? `${API_BASE_URL}/frequency/weather/top/${topN}`
+      : `${API_BASE_URL}/frequency/weather`;
+    
+    const response = await fetchWithRetry<any>(url);
+    
+    // Handle both array response and object with items property
+    if (Array.isArray(response)) {
+      return response;
+    } else if (response.items) {
+      return response.items;
+    } else if (response.frequencies) {
+      // Convert frequencies object to array
+      return Object.entries(response.frequencies).map(([item, count]) => ({
+        condition: item,
+        count: count as number
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error fetching weather frequencies:', error);
+    throw error;
+  }
+};
+
+// ===========================
 // WEATHER DISTRIBUTION APIs
 // ===========================
 
@@ -130,9 +205,10 @@ export const getHourlyPatterns = async (): Promise<HourlyPattern[]> => {
   }
 };
 
-export const getHourlyChart = async (): Promise<TimeSeriesChartData> => {
+export const getHourlyChart = async (metric: string = 'temp'): Promise<TimeSeriesChartData> => {
   try {
-    return await fetchWithRetry<TimeSeriesChartData>(`${API_BASE_URL}/patterns/hourly/chart`);
+    const url = `${API_BASE_URL}/patterns/hourly/chart?metric=${metric}`;
+    return await fetchWithRetry<TimeSeriesChartData>(url);
   } catch (error) {
     console.error('Error fetching hourly chart:', error);
     throw error;
@@ -151,11 +227,13 @@ export const getMonthlyPatterns = async (year?: string): Promise<MonthlyPattern[
   }
 };
 
-export const getMonthlyChart = async (year?: string): Promise<TimeSeriesChartData> => {
+export const getMonthlyChart = async (year?: string, metric: string = 'temp'): Promise<TimeSeriesChartData> => {
   try {
-    const url = year 
-      ? `${API_BASE_URL}/patterns/monthly/chart?year=${year}`
-      : `${API_BASE_URL}/patterns/monthly/chart`;
+    const params = new URLSearchParams();
+    if (year) params.append('year', year);
+    params.append('metric', metric);
+    
+    const url = `${API_BASE_URL}/patterns/monthly/chart?${params.toString()}`;
     return await fetchWithRetry<TimeSeriesChartData>(url);
   } catch (error) {
     console.error('Error fetching monthly chart:', error);
